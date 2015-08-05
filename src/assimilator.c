@@ -37,7 +37,7 @@ long  dec(char[]);
 long  chartoint(int);
 int load_assembly(char* file_name);
 char* get_substr(char* ,int ,char,char*);
-int decode_execute(int,char* ,int,int ,int ,int ,long,long,int);
+int decode_execute(FILE*, int, char* ,int,int ,int ,int ,long,long,int);
 int size_imm;
 int indx;	
 struct memory
@@ -63,6 +63,8 @@ int main(int argc,char* argv[])
 	last_index = load_assembly(argv[1]);
 	
 	indx=0;
+	int inst_count=0;
+	int inst_limit=atoi(argv[2]);
 	pc=0,npc=0;
 	FILE *f_reg;
 	FILE *f_mem;
@@ -75,12 +77,12 @@ int main(int argc,char* argv[])
 	f_inst=fopen("instruction.txt","w");
 
 
-	while(indx<last_index)
+	while(indx<last_index && inst_count<=inst_limit)
 	{
 			
 		indx=pc/4;
 		
-		npc = decode_execute(pc,memblock[indx].op_str,memblock[indx].dest_id,
+		npc = decode_execute(f_inst,pc,memblock[indx].op_str,memblock[indx].dest_id,
 				memblock[indx].src1_id,memblock[indx].src2_id,
 				memblock[indx].immediate,memblock[indx].data,
 				memblock[indx].op_dec,memblock[indx].imm_valid);//prints   lines in the memory one by one from i=0
@@ -97,6 +99,7 @@ int main(int argc,char* argv[])
 			memblock[indx].immediate);
 		*/
 		pc = npc;
+		inst_count++;
 	} //while(index < last_index)
 
 	f_reg=fopen("regfile.txt","w");//write the regfile contents in a  new file
@@ -119,7 +122,7 @@ int main(int argc,char* argv[])
 return 0;
 }	
 		
-int decode_execute(int cpc, char* opstring,int dest_id,int src1_id,int src2_id,int immediate,long data,long opdecimal,int imm_valid)
+int decode_execute(FILE* inst_trace, int cpc, char* opstring,int dest_id,int src1_id,int src2_id,int immediate,long data,long opdecimal,int imm_valid)
 {
 	int result=0,res=0;
 //	int regfile[34];
@@ -133,22 +136,22 @@ int decode_execute(int cpc, char* opstring,int dest_id,int src1_id,int src2_id,i
 				result=regfile[src1_id]+immediate;
 				int operand1=regfile[src1_id];
 				regfile[dest_id]=result;
-				sprintf(inst_display,"%s %d %d %d",opstring,dest_id,src1_id,immediate);
-				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and result are:%x %s %x %x %x",
+				sprintf(inst_display,"0x%x %s r%d r%d 0x%x",cpc,opstring,dest_id,src1_id,immediate);
+				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and result are:0x%x %s 0x%x 0x%x 0x%x",
 					cpc,opstring,operand1,immediate,result); 
 				break;
 		case ADDU:	result=regfile[src1_id]+regfile[src2_id];
 				regfile[dest_id]=result;
-				sprintf(inst_display," %s %d %d %d",opstring,dest_id,src1_id,src2_id);
-				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and result are:%x %s %x %x %x",
+				sprintf(inst_display,"0x%x %s r%d r%d r%d",cpc,opstring,dest_id,src1_id,src2_id);
+				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and result are:0x%x %s 0x%x 0x%x 0x%x",
 					cpc,opstring,regfile[src1_id],immediate,regfile[dest_id]); 
 			
 				break;
 
 		case ORI:	result=regfile[src1_id] | immediate;
 				regfile[dest_id]=result;
-				sprintf(inst_display," %s %d %d %d",opstring,dest_id,src1_id,immediate);
-				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and result are:%x %s %x %x %x",
+				sprintf(inst_display,"0x%x %s r%d r%d 0x%x",cpc,opstring,dest_id,src1_id,immediate);
+				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and result are:0x%x %s 0x%x 0x%x 0x%x",
 					cpc,opstring,regfile[src1_id],immediate,regfile[dest_id]); 
 
 				break;
@@ -161,8 +164,8 @@ int decode_execute(int cpc, char* opstring,int dest_id,int src1_id,int src2_id,i
 				{
 					npc=cpc+8;
 				}
-				sprintf(inst_display," %s %d %d %d",opstring,dest_id,src1_id,immediate);
-				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and npc are:%x %s %x %x %x",
+				sprintf(inst_display,"0x%x %s r%d r%d 0x%x",cpc,opstring,dest_id,src1_id,immediate);
+				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and npc are:0x%x %s 0x%x 0x%x 0x%x",
 					cpc,opstring,regfile[src1_id],regfile[dest_id],npc); 
 				break;
 				
@@ -173,8 +176,8 @@ int decode_execute(int cpc, char* opstring,int dest_id,int src1_id,int src2_id,i
 				else
 					npc=cpc+8;	
 				
-				sprintf(inst_display," %s %d %d %d",opstring,dest_id,src1_id,immediate);
-				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and npc are:%x %s %x %x %x",
+				sprintf(inst_display,"0x%x %s r%d r%d 0x%x",cpc,opstring,dest_id,src1_id,immediate);
+				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and npc are:0x%x %s 0x%x 0x%x 0x%x",
 					cpc,opstring,regfile[src1_id],regfile[dest_id],npc); 
 				
 				break;
@@ -184,8 +187,8 @@ int decode_execute(int cpc, char* opstring,int dest_id,int src1_id,int src2_id,i
 	
 					res=regfile[src1_id]+regfile[src2_id];
 					regfile[dest_id]=memblock[res/4].data;			
-					sprintf(inst_display,"%s r%d r%d r%d",opstring,dest_id,src1_id,src2_id);
-					sprintf(execution_str,"The PC,opcode, operand1,operand 2, address and destination register value are:%x %s %x %x %x %x\n",
+					sprintf(inst_display,"0x%x %s r%d r%d r%d",cpc,opstring,dest_id,src1_id,src2_id);
+					sprintf(execution_str,"The PC,opcode, operand1,operand 2, address and destination register value are:0x%x %s 0x%x 0x%x 0x%x 0x%x\n",
 						cpc,opstring,regfile[src1_id],regfile[src2_id],res,regfile[dest_id]); 
 				
 				}
@@ -193,8 +196,8 @@ int decode_execute(int cpc, char* opstring,int dest_id,int src1_id,int src2_id,i
 				{	
 					res=immediate+regfile[src1_id];
 					regfile[dest_id]=memblock[res/4].data;			
-					sprintf(inst_display,"%s r%d r%d #%d",opstring,dest_id,src1_id,immediate);
-					sprintf(execution_str,"The PC,opcode, operand1,operand 2 ,address and destination register value are:%x %s %x %x %x %x\n ",
+					sprintf(inst_display,"0x%x %s r%d r%d 0x%x",cpc,opstring,dest_id,src1_id,immediate);
+					sprintf(execution_str,"The PC,opcode, operand1,operand 2 ,address and destination register value are:0x%x %s 0x%x 0x%x 0x%x 0x%x\n ",
 						cpc,opstring,regfile[src1_id],immediate,res,regfile[dest_id]); 
 				
 
@@ -210,8 +213,8 @@ int decode_execute(int cpc, char* opstring,int dest_id,int src1_id,int src2_id,i
 					
 					res=regfile[src1_id]+regfile[src2_id];
 					memblock[res/4].data=regfile[dest_id];	
-					sprintf(inst_display," %s r%d r%d r%d",opstring,dest_id,src1_id,src2_id);
-					sprintf(execution_str,"The PC,opcode, operand1,operand 2,address and the destination are:%x %s %x %x  %x %x\n ",
+					sprintf(inst_display,"0x%x %s r%d r%d 0x%x",cpc,opstring,dest_id,src1_id,src2_id);
+					sprintf(execution_str,"The PC,opcode, operand1,operand 2,address and the destination are:0x%x %s 0x%x 0x%x  0x%x 0x%x\n ",
 						cpc,opstring,regfile[src1_id],regfile[src2_id],res,regfile[dest_id]);
 				}
 				else
@@ -219,8 +222,8 @@ int decode_execute(int cpc, char* opstring,int dest_id,int src1_id,int src2_id,i
 					res=immediate+regfile[src1_id];
 					memblock[res/4].data=regfile[dest_id];	
 				
-					sprintf(inst_display," %s r%d r%d #%d",opstring,dest_id,src1_id,immediate);
-					sprintf(execution_str,"The PC,opcode, operand1,operand 2,address and the destination are:%x %s %x %x %x %x\n ",
+					sprintf(inst_display,"0x%x  %s r%d r%d 0x%x",cpc,opstring,dest_id,src1_id,immediate);
+					sprintf(execution_str,"The PC,opcode, operand1,operand 2,address and the destination are:0x%x %s 0x%x 0x%x 0x%x 0x%x\n ",
 						cpc,opstring,regfile[src1_id],regfile[src2_id],res,regfile[dest_id]);
 
 
@@ -238,8 +241,8 @@ int decode_execute(int cpc, char* opstring,int dest_id,int src1_id,int src2_id,i
 				{
 					regfile[dest_id]=0;
 				}	
-				sprintf(inst_display," %s %d %d %d",opstring,dest_id,src1_id,src2_id);
-				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and result are:%x %s %x %x %x",
+				sprintf(inst_display,"0x%x %s r%d r%d r%d",cpc,opstring,dest_id,src1_id,src2_id);
+				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and result are:0x%x %s 0x%x 0x%x 0x%x",
 					cpc,opstring,regfile[src1_id],regfile[src2_id],regfile[dest_id]); 
 
 				break;
@@ -247,63 +250,63 @@ int decode_execute(int cpc, char* opstring,int dest_id,int src1_id,int src2_id,i
 		case LUI:	
 				immediate=immediate<<16;
 				regfile[dest_id]=immediate;
-				sprintf(inst_display," %s %d %d ",opstring,dest_id,immediate);
-				sprintf(execution_str,"The PC,opcode, operand1 and result are:%x %s %x %x ",
+				sprintf(inst_display,"0x%x %s r%d 0x%x ",cpc,opstring,dest_id,immediate);
+				sprintf(execution_str,"The PC,opcode, operand1 and result are:0x%x %s 0x%x 0x%x ",
 					cpc,opstring,immediate,regfile[dest_id]); 
 				
 				break;
 	
 		case SUBU:	result=regfile[src1_id]-regfile[src2_id];
 				regfile[dest_id]=result;
-				sprintf(inst_display," %s %d %d %d",opstring,dest_id,src1_id,src2_id);
-				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and result are:%x %s %x %x %x",
+				sprintf(inst_display,"0x%x %s r%d r%d r%d",cpc,opstring,dest_id,src1_id,src2_id);
+				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and result are:0x%x %s 0x%x 0x%x 0x%x",
 					cpc,opstring,regfile[src1_id],regfile[src2_id],regfile[dest_id]); 
 
 				break;
 		case ANDI:	result=regfile[src1_id] & immediate;
 				regfile[dest_id]=result;
-				sprintf(inst_display," %s %d %d %d",opstring,dest_id,src1_id,immediate);
-				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and result are:%x %s %x %x %x",
+				sprintf(inst_display,"0x%x %s r%d r%d 0x%x",cpc,opstring,dest_id,src1_id,immediate);
+				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and result are:0x%x %s 0x%x 0x%x 0x%x",
 					cpc,opstring,regfile[src2_id],immediate,regfile[dest_id]); 
 				break;
 	
 		case AND:	result=regfile[src1_id] & regfile[src2_id];
 				regfile[dest_id]=result;
-				sprintf(inst_display," %s %d %d %d",opstring,dest_id,src1_id,src2_id);
-				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and result are:%x %s %x %x %x",
+				sprintf(inst_display,"0x%x %s r%d r%d r%d",cpc,opstring,dest_id,src1_id,src2_id);
+				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and result are:0x%x %s 0x%x 0x%x 0x%x",
 					cpc,opstring,regfile[src2_id],regfile[src2_id],regfile[dest_id]); 
 
 				break;
 		case NOR: 	result=regfile[src1_id] | regfile[src2_id];
 				regfile[dest_id]=~result;
-				sprintf(inst_display," %s %d %d %d",opstring,dest_id,src1_id,src2_id);
-				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and result are:%x %s %x %x %x",
+				sprintf(inst_display,"0x%x  %s r%d r%d r%d",cpc,opstring,dest_id,src1_id,src2_id);
+				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and result are:0x%x %s 0x%x 0x%x 0x%x",
 					cpc,opstring,regfile[src2_id],regfile[src2_id],regfile[dest_id]); 
 				break;
 		case XOR:	result=regfile[src1_id] ^ regfile[src2_id];
 				regfile[dest_id]=result;
-				sprintf(inst_display," %s %d %d %d",opstring,dest_id,src1_id,src2_id);
-				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and result are:%x %s %x %x %x",
+				sprintf(inst_display,"0x%x  %s r%d r%d r%d",cpc,opstring,dest_id,src1_id,src2_id);
+				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and result are:0x%x %s 0x%x 0x%x 0x%x",
 					cpc,opstring,regfile[src2_id],regfile[src2_id],regfile[dest_id]); 
 				break;
 		case XORI: 	result=regfile[src1_id] ^ immediate;
 				regfile[dest_id]=result;			
-				sprintf(inst_display," %s %d %d %d",opstring,dest_id,src1_id,immediate);
-				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and result are:%x %s %x %x %x",
+				sprintf(inst_display,"0x%x %s r%d r%d 0x%x",cpc,opstring,dest_id,src1_id,immediate);
+				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and result are:0x%x %s 0x%x 0x%x 0x%x",
 					cpc,opstring,regfile[src2_id],regfile[src2_id],regfile[dest_id]); 
 
 				break;
 		case OR: 	result=regfile[src1_id] | regfile[src2_id];
 				regfile[dest_id]=result;	
-				sprintf(inst_display," %s %d %d %d",opstring,dest_id,src1_id,src2_id);
-				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and result are:%x %s %x %x %x",
+				sprintf(inst_display,"0x%x  %s r%d r%d r%d",cpc,opstring,dest_id,src1_id,src2_id);
+				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and result are:0x%x %s 0x%x 0x%x 0x%x",
 					cpc,opstring,regfile[src2_id],regfile[src2_id],regfile[dest_id]); 
 
 				break;
 		case SLL:	result=regfile[src1_id]<<immediate;
 				regfile[dest_id]=result;	
-				sprintf(inst_display," %s %d %d %d",opstring,dest_id,src1_id,immediate);
-				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and result are:%x %s %x %x %x",
+				sprintf(inst_display,"0x%x %s r%d r%d 0x%x",cpc,opstring,dest_id,src1_id,immediate);
+				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and result are:0x%x %s 0x%x 0x%x 0x%x",
 					cpc,opstring,regfile[src1_id],immediate,regfile[dest_id]); 
 
 				break;
@@ -319,9 +322,9 @@ int decode_execute(int cpc, char* opstring,int dest_id,int src1_id,int src2_id,i
 				}
 				else
 				npc=npc+8;	
-				sprintf(inst_display," %s %d %d",opstring,dest_id,immediate);
+				sprintf(inst_display,"0x%x %s r%d 0x%x",cpc,opstring,dest_id,immediate);
 
-				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and npc are:%x %s %x %x %x",
+				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and npc are:0x%x %s 0x%x 0x%x 0x%x",
 					cpc,opstring,regfile[dest_id],immediate,npc); 
 				
 				break;
@@ -333,8 +336,8 @@ int decode_execute(int cpc, char* opstring,int dest_id,int src1_id,int src2_id,i
 				}
 				else
 				npc=npc+8;
-				sprintf(inst_display," %s %d  %d",opstring,dest_id,immediate);
-				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and npc are:%x %s %x %x %x",
+				sprintf(inst_display,"0x%x %s r%d 0x%x",cpc,opstring,dest_id,immediate);
+				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and npc are:0x%x %s 0x%x 0x%x 0x%x",
 					cpc,opstring,regfile[dest_id],immediate,npc); 
 				
 				break;
@@ -345,8 +348,8 @@ int decode_execute(int cpc, char* opstring,int dest_id,int src1_id,int src2_id,i
 				}
 				else
 				npc=npc+8;	
-				sprintf(inst_display," %s %d %d",opstring,dest_id,immediate);
-				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and npc are:%x %s %x %x %x",
+				sprintf(inst_display,"0x%x %s r%d 0x%x",cpc,opstring,dest_id,immediate);
+				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and npc are:0x%x %s 0x%x 0x%x 0x%x",
 					cpc,opstring,regfile[dest_id],immediate,npc); 
 				
 				break;
@@ -358,15 +361,15 @@ int decode_execute(int cpc, char* opstring,int dest_id,int src1_id,int src2_id,i
 				}
 				else
 				npc=npc+8;
-				sprintf(inst_display," %s %d %d",opstring,dest_id,immediate);
-				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and npc are:%x %s %x %x %x",
+				sprintf(inst_display,"0x%x %s r%d 0x%x",cpc,opstring,dest_id,immediate);
+				sprintf(execution_str,"The PC,opcode, operand1,operand 2 and npc are:0x%x %s 0x%x 0x%x 0x%x",
 					cpc,opstring,regfile[src1_id],regfile[dest_id],npc); 
 				
 				break;
 		
 		case J:		npc=(cpc & 0xf0000000) | immediate;	
-				sprintf(inst_display," %s %d",opstring,immediate);
-				sprintf(execution_str,"The PC,opcode, operand1, and npc are:%x %s %x %x",
+				sprintf(inst_display,"0x%x %s 0x%x",cpc,opstring,immediate);
+				sprintf(execution_str,"The PC,opcode, operand1, and npc are:0x%x %s 0x%x 0x%x",
 					cpc,opstring,immediate,npc); 
 				
 				break;
@@ -375,23 +378,23 @@ int decode_execute(int cpc, char* opstring,int dest_id,int src1_id,int src2_id,i
 
 
 		case JAL:	npc=(cpc & 0xf0000000) | immediate;	
-				sprintf(inst_display," %s %d",opstring,immediate);
-				sprintf(execution_str,"The PC,opcode, operand1 and npc are:%x %s %x %x ",
+				sprintf(inst_display,"0x%x %s 0x%x",cpc,opstring,immediate);
+				sprintf(execution_str,"The PC,opcode, operand1 and npc are:0x%x %s 0x%x 0x%x ",
 					cpc,opstring,immediate,npc); 
 				
 				//regfile[31]=
 				break;
 		case JR: 	npc=regfile[dest_id];	
-				sprintf(inst_display," %s %d",opstring,immediate);
-				sprintf(execution_str,"The PC,opcode, operand1 and npc are:%x %s %x %x ",
+				sprintf(inst_display,"0x%x %s 0x%x",cpc,opstring,immediate);
+				sprintf(execution_str,"The PC,opcode, operand1 and npc are:0x%x %s 0x%x 0x%x ",
 					cpc,opstring,regfile[dest_id],npc); 
 				
 				break;
 
 		case JALR:	regfile[31]=cpc+8;
 				npc=regfile[dest_id]; 	
-				sprintf(inst_display," %s %d",opstring,immediate);
-				sprintf(execution_str,"The PC,opcode, operand1 and npc are:%x %s %x %x ",
+				sprintf(inst_display,"0x%x %s 0x%x",cpc,opstring,immediate);
+				sprintf(execution_str,"The PC,opcode, operand1 and npc are:0x%x %s 0x%x 0x%x ",
 					cpc,opstring,regfile[dest_id],npc); 
 				     
 				break;
@@ -406,6 +409,7 @@ int decode_execute(int cpc, char* opstring,int dest_id,int src1_id,int src2_id,i
 			
 	}
 	printf("%s\n",inst_display);	
+	fprintf(inst_trace,"%s\n",inst_display);	
 	printf("%s\n",execution_str);	
 	
 
@@ -577,6 +581,9 @@ int load_assembly(char* file_name)
 					}
 					i=0;
 					op_dec=0;
+					dest_id = 0;
+					src1_id = 0;
+					src2_id = 0;
 					while(opcode[i]!='\0')
 					{
 						temp=opcode[i];
@@ -692,7 +699,7 @@ int load_assembly(char* file_name)
 	}
 	for(k=0;k<2048;k++)
 	{
-		printf("the memory contents are: instruction: %s %d %d %d %d and data: %x dec_op:%ld in index %d\n",
+		printf("the memory contents are: instruction: %s %d %d %d %d and data: 0x%x dec_op:%ld in index %d\n",
 			memblock[k].op_str,memblock[k].dest_id,
 			memblock[k].src1_id,memblock[k].src2_id,
 			memblock[k].immediate,memblock[k].data,
